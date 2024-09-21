@@ -220,7 +220,8 @@ methods (Access = protected)
         % turn kernel into vector, padded with 0's
         lin_filter_len = f_h * f_w + (f_h - 1) * (img_h_in - f_h);
         lin_filter = [filter; zeros(img_h_in-f_h, f_w)];
-        lin_filter = reshape(lin_filter, [], 1)';
+        % lin_filter = reshape(lin_filter, [], 1)';
+        lin_filter = reshape(lin_filter', [], 1);
         lin_filter = lin_filter(1:lin_filter_len); % remove trailing zeros
 
         % init linear weight matrix

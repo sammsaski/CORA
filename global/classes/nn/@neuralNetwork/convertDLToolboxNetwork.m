@@ -34,6 +34,7 @@ if nargin < 2
 end
 
 n = size(dltoolbox_layers, 1);
+disp(n);
 
 layers = {};
 inputSize = [];
@@ -51,13 +52,18 @@ for i = 1:n
 
     % handle different types of layers
     if isa(dlt_layer, 'nnet.cnn.layer.ImageInputLayer') || ...
-            isa(dlt_layer, 'nnet.cnn.layer.FeatureInputLayer')
+            isa(dlt_layer, 'nnet.cnn.layer.FeatureInputLayer') || ...
+            isa(dlt_layer, 'nnet.cnn.layer.Image3DInputLayer')
         inputSize = dlt_layer.InputSize;
         if length(inputSize) == 1
             inputSize = [inputSize, 1];
         elseif length(inputSize) == 3
             % channel dimension should be last: [h,w,c]
             inputSize = sort(inputSize, 'descend');
+        elseif length(inputSize) == 4
+            % channel dimension should be last: [d,h,w,c]
+            % inputSize = sort(inputSize, 'descend');
+            % disp(inputSize);
         end
         currentSize = inputSize;
         continue;
@@ -138,6 +144,13 @@ for i = 1:n
 
         layers{end+1} = nnAvgPool2DLayer(poolSize, padding, stride, dilation, dlt_layer.Name);
 
+    elseif isa(dlt_layer, 'nnet.cnn.layer.AveragePooling3DLayer')
+        poolSize = dlt_layer.PoolSize;
+        padding = dlt_layer.PaddingSize;
+        stride = dlt_layer.Stride;
+
+        layers{end+1} = nnAvgPool3DLayer(poolSize, padding, stride, dlt_layer.Name);
+
     elseif isa(dlt_layer, 'nnet.cnn.layer.Convolution2DLayer')
         W = double(dlt_layer.Weights);
         b = double(reshape(dlt_layer.Bias, [], 1));
@@ -145,6 +158,14 @@ for i = 1:n
         stride = dlt_layer.Stride;
         dilation = dlt_layer.DilationFactor;
         layers{end+1} = nnConv2DLayer(W, b, padding, stride, dilation, dlt_layer.Name);
+
+    elseif isa(dlt_layer, 'nnet.cnn.layer.Convolution3DLayer')
+        W = double(dlt_layer.Weights);
+        b = double(reshape(dlt_layer.Bias, [], 1));
+        padding = dlt_layer.PaddingSize;
+        stride = dlt_layer.Stride;
+
+        layers{end+1} = nnConv3DLayer(W, b, padding, stride, dlt_layer.Name);
 
     elseif isa(dlt_layer, 'nnet.cnn.layer.MaxPooling2DLayer')
         poolSize = dlt_layer.PoolSize;
@@ -214,7 +235,6 @@ for i = 1:n
         end
         continue
     end
-
     currentSize = layers{end}.getOutputSize(currentSize);
 end
 layers = reshape(layers, [], 1); % 1 column
@@ -222,7 +242,10 @@ layers = reshape(layers, [], 1); % 1 column
 % instantiate neural network
 obj = neuralNetwork(layers);
 
+disp("Done instantiating the NN")
+
 if ~isempty(inputSize)
+    disp(inputSize);
     if isscalar(inputSize)
         inputSize = [inputSize, 1];
     end
@@ -233,6 +256,7 @@ if ~isempty(inputSize)
     % sanity check (should not fail)
     x = reshape(zeros(inputSize), [], 1);
     obj.evaluate(x);
+    disp("done evaluating on input")
 end
 
 if verbose

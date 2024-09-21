@@ -39,6 +39,10 @@ for i=1:length(obj.layers)
         layer = layer.convert2nnLinearLayer();
     end
 
+    if isa(layer, 'nnConv3DLayer')
+        layer = layer.convert2nnLinearLayer();
+    end
+
     if isa(layer, 'nnLinearLayer')
         W = layer.W * W;
         b = layer.W * b;

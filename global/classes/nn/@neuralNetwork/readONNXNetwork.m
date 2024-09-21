@@ -76,9 +76,15 @@ catch ME
     end
 end
 
-% convert DLT network to CORA network
-obj = neuralNetwork.convertDLToolboxNetwork(dltoolbox_net.Layers, verbose);
+disp(dltoolbox_net.Layers);
 
+% convert DLT network to CORA network
+% convLayer = dltoolbox_net.Layers(2);
+% disp(convLayer);
+% convPadding = convLayer.PaddingSize;
+% disp(convPadding);
+
+obj = neuralNetwork.convertDLToolboxNetwork(dltoolbox_net.Layers, verbose);
 
 end
 
