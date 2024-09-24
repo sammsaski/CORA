@@ -78,10 +78,30 @@ end
 
 % evaluate ----------------------------------------------------------------
 
-methods  (Access = {?nnLayer, ?neuralNetwork})
+methods (Access = {?nnLayer, ?neuralNetwork})
     
     % numeric
     function r = evaluateNumeric(obj, input, evParams)
+        % when using conv3d layer with c_in==1 || conv2d layer with c_in==3
+        if length(size(input)) == 3
+            % we need to flatten the input because * doesn't support
+            % n-d matrix mult when n > 2
+            input = permute(input, [2, 1, 3]); % to preserve order
+            input = input(:); % flatten
+        elseif length(size(input)) == 4
+            % input = permute(input, [2, 1, 3, 4]); % this is wrong for some reason
+            
+            % This is what was running when I found [1, 3, 2, 4]
+            % input = permute(input, [3, 1, 2, 4]); % this works for example 5
+            
+            % input = permute(input, [3, 2, 1, 4]);
+
+            % THIS WAS SO CLOSE
+            % input = permute(input, [3, 2, 4, 1]);
+            input = permute(input, [3, 2, 1, 4]);
+
+            input = input(:);
+        end
         r = obj.W * input + obj.b;
     end
 

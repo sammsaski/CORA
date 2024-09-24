@@ -26,6 +26,10 @@ methods
         obj@nnLayer(name)
 
         % 4. assign properties
+
+        % trying permuting W to get correct weights
+        % W = permute(W, [2, 1, 3, 4, 5]);
+
         obj.W = W;
         obj.b = b;
         obj.padding = padding;
@@ -72,21 +76,21 @@ end
 
 % evaluate ------------------------------------------------------------
 
-methods  (Access = {?nnLayer, ?neuralNetwork})
+methods (Access = {?nnLayer, ?neuralNetwork})
     % All dimensions (d,h,w,c) are flattened into a vector
 
     % numeric
     function r = evaluateNumeric(obj, input, evParams)
         % compute weight and bias
-        disp("Computing weight matrix")
+        % disp("Computing weight matrix")
         Wff = aux_computeWeightMatrix(obj);
         bias = aux_getPaddedBias(obj);
-        disp("Done computing weight matrix")
+        % disp("Done computing weight matrix")
 
         % simulate using linear layer
-        disp("Create linear layer")
+        % disp("Create linear layer")
         linl = nnLinearLayer(Wff, bias);
-        disp("Done creating linear layer")
+        % disp("Done creating linear layer")
         r = linl.evaluateNumeric(input, evParams);
     end
 end
@@ -133,14 +137,27 @@ methods (Access = protected)
 
         % Initialize weight matrix
         Wff = zeros(img_d_out * img_h_out * img_w_out * c_out, img_d_in * img_h_in * img_w_in * c_in);
-        disp("Done initializing Wff")
-        disp(size(Wff))
+        % disp("Done initializing Wff")
+        % disp(size(Wff))
 
         % Loop over output channels and input channels
         for k = 1:c_out % number of filters/out-channels
             for i = 1:c_in % number of in-channels
+                if isa(obj, 'nnAvgPool3DLayer')
+                    if k ~= i
+                        % avgPool only within the same channel
+                        continue;
+                    else
+                        % use the whole filter for avgPool
+                        filter = obj.W;
+                    end
+                else
+                    % Get the filter for this input-output channel pair
+                    filter = obj.W(:, :, :, i, k);
+                end
+                   
                 % Get the filter for this input-output channel pair
-                filter = obj.W(:, :, :, i, k);
+                % filter = obj.W(:, :, :, i, k);
 
                 % Compute weight matrix for this filter
                 Wf = aux_computeWeightMatrixForFilter(obj, filter, obj.inputSize(1:3));
@@ -207,9 +224,9 @@ methods (Access = protected)
         padded_input(w_start:w_start+img_w_in-1, h_start:h_start+img_h_in-1, d_start:d_start+img_d_in-1) = input_indices;
 
 
-        % Flatten filter
-        % filter_flat = filter(:);
-        filter = permute(filter, [3, 1, 2]);
+        % Flatten filter (from h,w,d -> d,h,w -> flat)
+        % filter = permute(filter, [3, 1, 2]);
+        filter = permute(filter, [3, 2, 1]);
         filter_flat = filter(:);
 
         % For each output voxel, compute the corresponding indices in the input and fill Wf
